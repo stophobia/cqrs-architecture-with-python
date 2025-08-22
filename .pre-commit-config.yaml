@@ -5,7 +5,6 @@ ci:
   autoupdate_schedule: monthly
 
 repos:
-  # --- Generic sanity checks (cheap/fast)
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -24,15 +23,12 @@ repos:
       - id: double-quote-string-fixer
         files: \.py$
 
-  # --- Code modernization
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.20.0
     hooks:
       - id: pyupgrade
-        # Alinhado com o Black (py310)
         args: [--py310-plus]
 
-  # --- Import cleanup (antes do isort/black)
   - repo: https://github.com/PyCQA/autoflake
     rev: v2.3.1
     hooks:
@@ -45,14 +41,12 @@ repos:
           - --remove-unused-variables
           - --ignore-init-module-imports
 
-  # --- Import sorting (compatível com Black)
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
     hooks:
       - id: isort
         args: [--profile=black, --line-length=100]
 
-  # --- Formatting
   - repo: https://github.com/psf/black
     rev: 25.1.0
     hooks:
@@ -63,23 +57,45 @@ repos:
           --skip-string-normalization
         ]
 
-  # --- Static analysis (flake8 primeiro, rápido)
   - repo: https://github.com/PyCQA/flake8
     rev: 7.3.0
     hooks:
       - id: flake8
         args: [--config=.flake8]
 
-  # --- Pylint rodando em venv do pre-commit (não no sistema)
   - repo: https://github.com/PyCQA/pylint
     rev: v3.3.8
     hooks:
       - id: pylint
-        # Use o .pylintrc e rode em paralelo
         args: [
           --rcfile=.pylintrc,
           -j, "0",
           --output-format=colorized
         ]
-        # Limite o escopo para o seu código (evita varrer venv, etc.)
         files: ^src/.*\.py$
+
+  - repo: local
+    hooks:
+      - id: run-pytest-tests
+        name: "Running pytest"
+        stages: [ prepare-commit-msg ]
+        entry: pytest src/
+        language: system
+        types: [ python ]
+        pass_filenames: false
+        always_run: true
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [ prepare-commit-msg ]
+        args: [ --strict, --force-scope, build, break, chore, ci, docs, feat, fix, perf, refactor, style, test ]
+
+
+default_install_hook_types:
+  - commit-msg
+  - post-commit
+  - pre-commit
+  - pre-push
+  - prepare-commit-msg
