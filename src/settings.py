@@ -31,5 +31,3 @@ ORDER_EVENT_STORE_DATABASE_NAME = config('ORDER_EVENT_STORE_DATABASE_NAME', defa
 ORDER_EVENT_STORE_COLLECTION_NAME = config(
     'ORDER_EVENT_STORE_COLLECTION_NAME', default='ordering_events'
 )
-
-KAFKA_SETTINGS = {'bootstrap_servers': 'ordering-event-bus-kafka:9092'}

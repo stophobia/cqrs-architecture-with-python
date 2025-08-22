@@ -1,12 +1,18 @@
+from __future__ import annotations
+
+from decimal import Decimal
 from enum import Enum
-from typing import Union
+from typing import Annotated
 
 from pydantic import ValidationInfo, field_validator
 
 from domain.base.value_object import StrIdValueObject, ValueObject
+from domain.product.model.value_objects import ProductId
 
 
 class OrderStatusEnum(str, Enum):
+    """Enumeration of possible order statuses."""
+
     WAITING = 'waiting'
     PAID = 'paid'
     CANCELLED = 'cancelled'
@@ -15,45 +21,28 @@ class OrderStatusEnum(str, Enum):
         return self.value
 
     @classmethod
-    def has_value(cls, value):
-        return value in cls._member_map_.values()
+    def has_value(cls, value: str) -> bool:
+        """Return True if a given string corresponds to a valid enum value."""
+        return value in (member.value for member in cls)
 
 
 class BuyerId(StrIdValueObject):
-    value: Union[str, 'BuyerId']
+    """Value object representing a buyer identifier."""
 
 
 class OrderItem(ValueObject):
-    product_id: str
-    amount: int
+    """Value object representing an item in an order."""
+
+    product_id: Annotated[str, ProductId]
+    amount: Decimal
 
     @field_validator('amount')
     @classmethod
-    def validate(cls, value: str | int, info: ValidationInfo) -> 'OrderStatusEnum':
+    def validate_amount(cls, value: Decimal, info: ValidationInfo) -> Decimal:
         if value < 0:
-            raise ValueError(f'Expected Order.amount >= 0, got {value}')
+            raise ValueError(f"Expected Order.amount >= 0, got {value}")
         return value
 
 
 class OrderId(StrIdValueObject):
-    value: Union[str, 'OrderId']
-
-
-class OrderStatus(StrIdValueObject):
-    Enum = OrderStatusEnum
-
-    def is_waiting(self) -> bool:
-        return self.value == OrderStatus.Enum.WAITING
-
-    def is_paid(self) -> bool:
-        return self.value == OrderStatus.Enum.PAID
-
-    def is_cancelled(self) -> bool:
-        return self.value == OrderStatus.Enum.CANCELLED
-
-    @field_validator('value')
-    @classmethod
-    def validate(cls, value: str | OrderStatusEnum, info: ValidationInfo) -> 'OrderStatusEnum':
-        if not OrderStatusEnum.has_value(value):
-            raise ValueError(f'OrderStatus named "{value}" not exists')
-        return value
+    """Value object representing an order identifier."""
