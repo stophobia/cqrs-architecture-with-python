@@ -1,29 +1,28 @@
-import json
-from uuid import uuid4
+from __future__ import annotations
 
-from pydantic import Field
+from uuid import UUID, uuid4
 
-from domain.base.model import Model
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class Entity(Model):
-    """Base class for domain entitie objects."""
+class Entity(BaseModel):
+    """Base class for domain entities."""
 
-    id: str = Field(default_factory=lambda: uuid4().hex)
+    id: UUID = Field(default_factory=uuid4)
     version: int = 0
 
-    def increase_version(self):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def increase_version(self) -> None:
+        """Increment the entity version."""
         self.version += 1
 
-    def to_dict(self):
-        return json.loads(self.json())
+    def __str__(self) -> str:
+        return f"{type(self).__name__}"
 
-    def __str__(self):
-        return f'{type(self).__name__}'
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
 
 class AggregateRoot(Entity):
-    """Base class for domain aggregate objects. Consits of 1+ entities"""
+    """Base class for domain aggregates (1+ entities)."""

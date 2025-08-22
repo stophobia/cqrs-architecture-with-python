@@ -1,32 +1,34 @@
-from enum import Enum
+from __future__ import annotations
 
-from pydantic import Field
+from enum import Enum
 
 from domain.base.event import DomainEvent
 
 
-class OrderEventName(Enum):
+class OrderEventName(str, Enum):
+    """Enumeration of domain events related to order lifecycle."""
 
     CREATED = 'payment_order_created'
     CANCELLED = 'payment_order_cancelled'
     PAID = 'payment_order_paid'
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class OrderCreated(DomainEvent):
-    event_name: str = Field(OrderEventName.CREATED.value)
+    """Event emitted when an order is created."""
+
+    event_name: str = OrderEventName.CREATED.value
 
 
 class OrderPaid(DomainEvent):
-    event_name: str = Field(OrderEventName.PAID.value)
+    """Event emitted when an order is paid."""
+
+    event_name: str = OrderEventName.PAID.value
 
 
 class OrderCancelled(DomainEvent):
-    event_name: str = Field(OrderEventName.CANCELLED.value)
+    """Event emitted when an order is cancelled."""
 
-
-class OrderEvent(Enum):
-    """Domain Event raised for special order use cases"""
-
-    CREATED = 'CREATED'
-    CANCELLED = 'CANCELLED'
-    PAID = 'PAID'
+    event_name: str = OrderEventName.CANCELLED.value

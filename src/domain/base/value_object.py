@@ -1,56 +1,41 @@
-from typing import Any, TypeVar, Union
+from __future__ import annotations
 
-from pydantic import ConfigDict, GetCoreSchemaHandler, ValidationError, ValidationInfo
+from typing import Any, TypeVar
+
+from pydantic import BaseModel, ConfigDict, GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
-
-from domain.base.model import Model
 
 ImplementationType = TypeVar('ImplementationType', bound='ValueObject')
 
 
-class ValueObject(Model):
-    """Base class for value objects"""
+class ValueObject(BaseModel):
+    """Base class for immutable value objects."""
 
-    def __eq__(self: ImplementationType, other: ImplementationType):
-        if type(self) is not type(other):
+    model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)
+
+    def __eq__(self: ImplementationType, other: object) -> bool:
+        if not isinstance(other, type(self)):
             return False
-
-        for attr_name in getattr(self, '__attrs'):
-            if getattr(self, attr_name) != getattr(other, attr_name):
-                return False
-
-        return True
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+        return self.model_dump() == other.model_dump()
 
 
 class StrIdValueObject(str):
-    """Base class for string value objects"""
-
-    value: Union[str, 'StrIdValueObject']
-
-    def __init__(self, value: Union[str, 'StrIdValueObject'], field_name: str | None = None):
-        self.value = value
-        self.field_name = field_name
-
-    def __repr__(self) -> str:
-        return str(self)
-
-    def __str__(self) -> str:
-        return str(self.value)
+    """Base class for string-based identifier value objects."""
 
     @classmethod
-    def validate(
-        cls, value: Union[str, 'StrIdValueObject'], info: ValidationInfo
-    ) -> 'StrIdValueObject':
-        if isinstance(value, str):
-            return value
-        raise ValidationError()
+    def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> StrIdValueObject:
+        if not isinstance(__input_value, str):
+            raise TypeError(f"expected str, got {type(__input_value).__name__}")
+        if not __input_value.strip():
+            raise ValueError('string identifier cannot be blank')
+        return cls(__input_value)
 
     @classmethod
     def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
     ) -> CoreSchema:
         return core_schema.with_info_after_validator_function(
-            cls.validate, handler(str), field_name=handler.field_name
+            cls.validate,
+            handler(str),
+            field_name=handler.field_name,
         )

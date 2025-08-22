@@ -1,21 +1,26 @@
-from abc import ABC, abstractmethod
+from __future__ import annotations
+
+import abc
+from typing import Any
 
 
-class CacheInterface(ABC):
+class CacheInterface(abc.ABC):
+    """Abstraction for cache storage implementations."""
 
-    silent_mode: bool
-
-    def __init__(self, silent_mode: bool):
+    def __init__(self, silent_mode: bool = False) -> None:
         self.silent_mode = silent_mode
 
-    @abstractmethod
-    async def get(self, key: str) -> dict | None:
-        raise NotImplementedError
+    @abc.abstractmethod
+    async def get(self, key: str) -> dict[str, Any] | None:
+        """Retrieve a value from the cache by key."""
+        raise NotImplementedError()
 
-    @abstractmethod
-    async def set(self, key: str, data: dict, ttl: int) -> None:
-        raise NotImplementedError
+    @abc.abstractmethod
+    async def set(self, key: str, data: dict[str, Any], ttl: int) -> None:
+        """Set a value in the cache with a time-to-live (ttl)."""
+        raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     async def delete(self, key: str) -> None:
-        raise NotImplementedError
+        """Delete a value from the cache by key."""
+        raise NotImplementedError()

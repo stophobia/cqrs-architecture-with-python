@@ -1,96 +1,80 @@
-import logging
+from __future__ import annotations
 
 from pydantic import ValidationError
 from pymongo.errors import DuplicateKeyError
 
 from domain.base.event import DomainEvent
+from domain.order.exceptions.order_exceptions import EntityOutdated, PersistenceError
 from domain.order.model.entities import Order
 from domain.order.model.value_objects import OrderId
 from domain.order.ports.order_event_store_repository_interface import (
     OrderEventStoreRepositoryInterface,
 )
-from domain.order.ports.store_connector_adapter_interface import StoreConnectorAdapterInterface
-
-logger = logging.getLogger(__name__)
 
 
 class OrderEventStoreRepository(OrderEventStoreRepositoryInterface):
-    """
-    Repository for storing and retrieving order domain
-    events using event sourcing.
-    """
-
-    def __init__(self, db_connection: StoreConnectorAdapterInterface, collection_name: str):
-        self.db_connection = db_connection
-        self.collection_name = collection_name
+    """Repository for storing and retrieving order domain events using event sourcing."""
 
     async def from_id(self, order_id: OrderId) -> list[DomainEvent] | None:
+        """Load all domain events for a given aggregate id."""
         connection = await self.db_connection.get_connection()
-        events = []
-        result = connection[self.collection_name].find({'aggregate.order_id': order_id})
-        events_list = await result.to_list(length=None)
-        if events_list:
-            logger.info(f'Retrieved all events for order_id: {order_id}')
-            events = [DomainEvent.parse_obj(event) for event in events_list]
-        return events or None
+        cursor = connection[self.collection_name].find({'aggregate.order_id': str(order_id)})
+        events_list = await cursor.to_list(length=None)
+        if not events_list:
+            return None
+        return [DomainEvent.parse_obj(event) for event in events_list]
 
     async def save(self, event: DomainEvent) -> None:
+        """Persist a new domain event with optimistic concurrency checks."""
         aggregate_root = event.aggregate
+        last_event = await self.get_last_event_version_from_entity(aggregate_root.order_id)
 
-        event_old = await self.get_last_event_version_from_entity(aggregate_root.order_id)
-        if event_old:
-            aggregate_root_old = Order.model_validate(event_old.aggregate)
-
+        if last_event:
+            aggregate_root_old = Order.model_validate(last_event.aggregate)
             if aggregate_root_old and aggregate_root_old.version > aggregate_root.version:
-                error_message = (
-                    f'Aggregate Root version needs to be greater than '
-                    f'the current one: {aggregate_root.version} > {aggregate_root_old.version}.'
+                raise EntityOutdated(
+                    detail=f"incoming version {aggregate_root.version} "
+                    f"is behind current {aggregate_root_old.version}"
                 )
-                logger.warning(error_message, exc_info=True)
-                raise ValueError(error_message)
-
-            event.version = event_old.version
+            event.version = last_event.version
             event.increase_version()
-            event.tracker_id = event_old.tracker_id
+            event.tracker_id = last_event.tracker_id
         else:
             event.increase_version()
 
         connection = await self.db_connection.get_connection()
         try:
             await connection[self.collection_name].insert_one(event.to_dict())
-            logger.info(f'Successfully saved event with ID: {event.id}')
-        except DuplicateKeyError as e:
-            error_message = f'Duplicate event found with ID: {event.id}'
-            raise e from e
+        except DuplicateKeyError as exc:
+            raise PersistenceError(detail=f"duplicate event id {event.id}") from exc
 
     async def get_all_events_by_tracker_id(self, tracker_id: str) -> list[DomainEvent]:
+        """Retrieve all events correlated by a tracker id."""
         connection = await self.db_connection.get_connection()
-        events = []
-        result = connection[self.collection_name].find({'tracker_id': tracker_id})
-        events_list = await result.to_list(length=None)
-        if events_list:
-            logger.info(f'Retrieved all events for tracker_id: {tracker_id}')
-            events = [DomainEvent.parse_obj(event) for event in events_list]
-        return events
+        cursor = connection[self.collection_name].find({'tracker_id': tracker_id})
+        events_list = await cursor.to_list(length=None)
+        return [DomainEvent.parse_obj(event) for event in events_list] if events_list else []
 
     async def get_last_event_version_from_entity(self, order_id: OrderId) -> DomainEvent | None:
+        """Return the most recent event for a given aggregate id."""
         connection = await self.db_connection.get_connection()
-        events = connection[self.collection_name].find(
-            {'aggregate.order_id': order_id}, sort=[('version', -1)], limit=1
+        cursor = connection[self.collection_name].find(
+            {'aggregate.order_id': str(order_id)},
+            sort=[('version', -1)],
+            limit=1,
         )
-        events_list = await events.to_list(length=None)
-        if events_list:
-            event = events_list[0]
-            event.pop('_id', None)
-            logger.info(f'Retrieved last aggregate version event for order id: {order_id}')
-            return DomainEvent.parse_obj(event)
-        return None
+        events_list = await cursor.to_list(length=None)
+        if not events_list:
+            return None
+        event = events_list[0]
+        event.pop('_id', None)
+        return DomainEvent.parse_obj(event)
 
-    async def rebuild_aggregate_root(self, event: DomainEvent, aggregate_class: Order) -> Order:
+    async def rebuild_aggregate_root(
+        self, event: DomainEvent, aggregate_class: type[Order]
+    ) -> Order:
+        """Rehydrate an aggregate from a domain event."""
         try:
-            aggregate_root = aggregate_class.parse_obj(event.aggregate.dict())
-        except ValidationError as e:
-            logger.error(f'Error rebuilding aggregate root from event: {event.id}')
-            raise e
-        logger.info(f'Aggregate root rebuilt successfully from event: {event.id}')
-        return aggregate_root
+            return aggregate_class.parse_obj(event.aggregate.dict())
+        except ValidationError as exc:
+            raise PersistenceError(detail='invalid aggregate reconstruction') from exc

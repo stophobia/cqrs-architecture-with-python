@@ -1,41 +1,32 @@
-from enum import Enum
+from __future__ import annotations
 
-from pydantic import validator
+from enum import Enum
 
 from domain.base.value_object import ValueObject
 
 
 class StatesEnum(str, Enum):
-    RS: str = 'Rio Grande do Sul'
-    SP: str = 'São Paulo'
-    SC: str = 'Santa Catarina'
+    RS = 'Rio Grande do Sul'
+    SP = 'São Paulo'
+    SC = 'Santa Catarina'
 
     @classmethod
-    def has_value(cls, value):
-        return value in cls._member_map_.values()
-
-
-class State(ValueObject):
-    enum: str = StatesEnum
-
-    def states(self) -> bool:
-        return self.value in [state.value for state in StatesEnum]
-
-    @validator('enum', check_fields=False)
-    def validate(cls, value):
-        if not StatesEnum.has_value(value):
-            raise ValueError(f'State named "{value}" not exists')
-        return value
+    def has_value(cls, value: str) -> bool:
+        """Return True if the provided value matches any enum value."""
+        return value in (member.value for member in cls)
 
 
 class Address(ValueObject):
-    house_number: str
+    """Value object representing a postal address."""
+
+    house_number: str | int | None
     road: str
     sub_district: str
     district: str
-    state: str
+    state: StatesEnum
     postcode: str
     country: str
 
-    def states(self) -> bool:
-        return self.state.states()
+    def is_valid_state(self) -> bool:
+        """Check if the state belongs to the known StatesEnum."""
+        return StatesEnum.has_value(self.state)

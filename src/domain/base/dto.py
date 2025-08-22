@@ -1,18 +1,14 @@
-from pydantic import ConfigDict
+from __future__ import annotations
 
-from domain.base.model import Model
+from pydantic import BaseModel, ConfigDict
 
 
-class DataTransferObject(Model):
-    """Base class for data transfer objects (DTOs)"""
+class DataTransferObject(BaseModel):
+    """Base class for Data Transfer Objects (DTOs)."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, DataTransferObject):
+        if not isinstance(other, type(self)):
             return False
-
-        for field_name in self.__fields__:
-            if getattr(self, field_name) != getattr(other, field_name):
-                return False
-        return True
+        return self.model_dump() == other.model_dump()

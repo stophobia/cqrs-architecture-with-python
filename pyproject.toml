@@ -1,27 +1,96 @@
 [tool.poetry]
-name = "cqrs-architecture-with-python-event-sourcing"
-version = "0.1.0"
+name = "cqrs-architecture-with-python"
+version = "1.0.0"
 description = ""
 authors = ["Marcos Silveira <47537283+MarcosVs98@users.noreply.github.com>"]
-readme = "README.md"
-packages = [{include = "cqrs_architecture_with_python_event_sourcing"}]
+package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.9"
-aioredis = "^2.0.1"
-dnspython = "^2.4.2"
-fastapi = "^0.104.1"
-fastapi-pagination = "^0.12.12"
-motor = "^3.3.2"
-pydantic = "^2.5.1"
-pymongo = "^4.6.0"
+python = ">=3.12, <3.13"
+fastapi = "^0.108.0"
+uvicorn = { extras = ["standard"], version = "^0.21.1" }
 python-decouple = "^3.8"
-uvicorn = {extras = ["standard"], version = "^0.18.3"}
-requests = "^2.31.0"
-aiohttp = "^3.9.0"
-aiokafka = "^0.8.1"
+gunicorn = "^20.1.0"
+pymongo = "^4.9.0"
+motor = "^3.6.0"
+dependency-injector = "^4.41.0"
+pydantic = "^2.5.3"
+fastapi-pagination = "^0.12.14"
+redis = "^6.1.0"
+pylint-pydantic = "^0.3.5"
 
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.1.2"
+pytest-cov = ">=4.0.0"
+pytest-asyncio = ">=0.19.0"
+pytest-mock = ">=3.8.2"
+pytest-env = ">=0.6.2"
+asgi-lifespan = ">=1.0.1"
+
+black = ">=25.1.0"
+isort = ">=6.0.1"
+flake8 = ">=7.3.0"
+pylint = ">=3.2.6"
+astroid = ">=3.2.2"
+
+ipython = ">=8.5.0"
+pre-commit = ">=4.0.1"
+pylint-pydantic = ">=0.3.2"
+mypy = ">=0.982"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+skip-string-normalization = true
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_third_party = ["fastapi", "pydantic", "starlette"]
+
+[tool.ruff]
+line-length = 100
+select = [
+    "E","W","F",     # pycodestyle/pyflakes
+    "C",             # flake8-comprehensions
+    "B",             # flake8-bugbear
+]
+ignore = [
+    "E501",          # line too long (Black cuida)
+    "B008",          # calls em defaults
+    "C901",
+]
+[tool.ruff.format]
+quote-style = "single"
+[tool.ruff.lint.isort]
+classes = ["SVC"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["src"]
+testpaths = "tests"
+addopts = "-p no:warnings"
+
+[tool.pytest.ini_options.env]
+PYTEST_RUNNING = 1
+
+[coverage.report]
+exclude_also = [
+  "raise NotImplementedError",
+  "class .*\\bProtocol\\):",
+  "@(abc\\.)?abstractmethod"
+]
+
+[coverage.run]
+branch = true
+omit = [
+  "tests/*",
+  "*/__init__.py",
+  "src/*/ports/*",
+  "*/lib/python*/*"
+]
+source = "./src"
