@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 
-from containers import OrderContainer
+from containers import AppContainer
 from rest import init_middlewares, init_routes
 from settings import APPLICATION_NAME
 
 
 def create_app() -> FastAPI:
-    container = OrderContainer()
+    container = AppContainer()
     container.init_resources()
     container.wire(modules=[__name__])
 

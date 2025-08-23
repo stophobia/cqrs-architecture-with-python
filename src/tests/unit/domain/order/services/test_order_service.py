@@ -84,6 +84,7 @@ async def test_pay_order(order_service):
 @pytest.mark.asyncio
 async def test_cancel_order(order_service):
     fake_order = MagicMock(spec=Order)
+    fake_order.status = 'cancelled'
     order_service.repository.from_id.return_value = fake_order
 
     await order_service.cancel_order(order_id=OrderId('o2'))

@@ -6,6 +6,10 @@ import motor.motor_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
+from utils.logger import get_logger
+
+logger = get_logger()
+
 
 class MongoDBAdapterException(Exception):
     """Exception raised for MongoDB adapter related errors."""
@@ -49,6 +53,7 @@ class AsyncMongoDBConnectorAdapter:
             self._ensure_connection()
             yield self._database
         except (ServerSelectionTimeoutError, ConnectionFailure) as exc:
+            await logger.exception('MongoDB connection failed')
             await self._reset_connection()
             raise MongoDBAdapterException(
                 f'MongoDB connection failed for {self.database_name} and has been reset.'

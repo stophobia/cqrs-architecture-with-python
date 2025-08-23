@@ -1,11 +1,12 @@
-from __future__ import annotations
-
 from typing import Annotated
 
 from domain.order.exceptions.order_exceptions import EntityOutdated, PersistenceError
 from domain.order.model.entities import Order
 from domain.order.model.value_objects import OrderId
 from domain.order.ports.order_repository_interface import OrderRepositoryInterface
+from utils.logger import get_logger
+
+logger = get_logger()
 
 
 class OrderRepository(OrderRepositoryInterface):
@@ -49,6 +50,11 @@ class OrderRepository(OrderRepositoryInterface):
                     upsert=True,
                 )
             except Exception as exc:
+                await logger.exception(
+                    'Failed to persist order',
+                    order_id=str(order.id),
+                    collection=self.collection_name,
+                )
                 raise PersistenceError(detail='failed to persist order') from exc
 
         await self.cache_adapter.set(key=key, data=order.model_dump(mode='json'))

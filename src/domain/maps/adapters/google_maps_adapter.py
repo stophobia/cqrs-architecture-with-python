@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from domain.maps.model.value_objects import Address
 from domain.maps.ports.maps_adapter_interface import MapsAdapterInterface
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import abc
 
 from domain.maps.model.value_objects import Address

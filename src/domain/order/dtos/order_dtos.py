@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import uuid
 from collections.abc import Sequence
 from decimal import Decimal
@@ -96,7 +94,7 @@ class OrderUpdateStatusResponse(DataTransferObject):
     )
 
     @classmethod
-    def from_order_id(cls, order_id: OrderId) -> OrderUpdateStatusResponse:
+    def from_order_id(cls, order_id: OrderId) -> 'OrderUpdateStatusResponse':
         """Factory from identifier."""
         return cls(order_id=order_id)
 
@@ -134,6 +132,6 @@ class OrderDetail(DataTransferObject):
         return self.product_cost + self.delivery_cost
 
     @classmethod
-    def from_order(cls, order: Order) -> OrderDetail:
+    def from_order(cls, order: Order) -> 'OrderDetail':
         """Factory from aggregate."""
         return cls.model_validate(order.model_dump())

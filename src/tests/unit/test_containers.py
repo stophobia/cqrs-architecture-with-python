@@ -9,65 +9,65 @@ from domain.order.repositories.order_repository import OrderRepository
 from domain.order.services.order_service import OrderService
 from domain.payment.adapters.paypal_adapter import PayPalPaymentAdapter
 from domain.product.adapters.product_adapter import ProductAdapter
-from src.containers import OrderContainer
+from src.containers import AppContainer
 
 
 def test_container_initialization():
-    container = OrderContainer()
+    container = AppContainer()
     service = container.order_service()
     assert service is not None
 
 
 def test_cache_adapter_provider():
-    container = OrderContainer()
+    container = AppContainer()
     cache = container.cache_adapter()
     assert isinstance(cache, RedisAdapter)
 
 
 def test_event_publisher_provider():
-    container = OrderContainer()
+    container = AppContainer()
     publisher = container.event_publisher()
     assert isinstance(publisher, DummyEventPublisher)
 
 
 def test_maps_adapter_provider():
-    container = OrderContainer()
+    container = AppContainer()
     maps = container.maps_adapter()
     assert isinstance(maps, GoogleMapsAdapter)
 
 
 def test_order_event_store_connection_provider():
-    container = OrderContainer()
+    container = AppContainer()
     conn = container.order_event_store_connection()
     assert isinstance(conn, AsyncMongoDBConnectorAdapter)
 
 
 def test_order_repository_connection_provider():
-    container = OrderContainer()
+    container = AppContainer()
     conn = container.order_repository_connection()
     assert isinstance(conn, AsyncMongoDBConnectorAdapter)
 
 
 def test_order_event_store_repository_provider():
-    container = OrderContainer()
+    container = AppContainer()
     repo = container.order_event_store_repository()
     assert isinstance(repo, OrderEventStoreRepository)
 
 
 def test_order_repository_provider():
-    container = OrderContainer()
+    container = AppContainer()
     repo = container.order_repository()
     assert isinstance(repo, OrderRepository)
 
 
 def test_delivery_cost_calculator_provider():
-    container = OrderContainer()
+    container = AppContainer()
     svc = container.delivery_cost_calculator()
     assert isinstance(svc, DeliveryCostCalculatorAdapter)
 
 
 def test_order_service_provider():
-    container = OrderContainer()
+    container = AppContainer()
     service = container.order_service()
     assert isinstance(service, OrderService)
     assert isinstance(service.repository, OrderRepository)
@@ -78,7 +78,7 @@ def test_order_service_provider():
 
 
 def test_order_controller_provider():
-    container = OrderContainer()
+    container = AppContainer()
     controller = container.order_controller()
     assert isinstance(controller, OrderController)
     assert isinstance(controller.order_service, OrderService)

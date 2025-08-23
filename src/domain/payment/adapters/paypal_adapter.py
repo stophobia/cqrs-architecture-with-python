@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import uuid
 
 from domain.payment.model.value_objects import PaymentId
