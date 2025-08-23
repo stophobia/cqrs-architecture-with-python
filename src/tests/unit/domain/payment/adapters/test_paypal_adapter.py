@@ -27,7 +27,7 @@ async def test_new_payment_generates_unique_ids():
 
     assert isinstance(result1, PaymentId)
     assert isinstance(result2, PaymentId)
-    assert result1 != result2  # cada pagamento gera um novo UUID
+    assert result1 != result2
 
 
 @pytest.mark.asyncio
