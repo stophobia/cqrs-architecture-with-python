@@ -63,7 +63,7 @@ Each of this group of applications/services belongs to a specific bounded contex
 
 ## Technologies and patterns used
 
-- **Python 3.10**
+- **Python 3.12**
 - **FastAPI (Rest API)**
 - **MongoDB**
 - **Pydantic 2.5**
@@ -76,17 +76,23 @@ In addition to others, the main pattern that guides this project is the Ports & 
 
 With CQRS, we have a clear separation of concerns, making the codebase easier to understand and maintain.Developers can more easily reason about how changes to the codebase will affect the overall system. Additionally, its use allows each model to evolve independently since they are not strongly coupled. This means changes to one model can be made without affecting the other model.
 
+## Logging
+
+This project uses [structlog](https://www.structlog.org/en/stable/) for structured JSON logging.  
+Logs include contextual information (timestamp, level, module, line number) and are ready for integration with APM/observability tools.
 
 ---
 ## Running the project
 
 ### Option 1 - Via Docker Compose
 
-#### Run docker-compose
-
-Finally, run the project and its dependencies in the background using the command
 ```bash
-docker-compose up -d
+docker compose up -d && docker compose logs -f app
+```
+
+### Option 2 - Via Makefile
+```bash
+Make build-env
 ```
 
 ## References
