@@ -20,4 +20,4 @@ pc-run:
 	pre-commit run
 
 build-env:
-	docker-compose down && docker-compose up -d && docker-compose logs -f app
+	docker compose down && docker compose up -d && docker compose logs -f app
