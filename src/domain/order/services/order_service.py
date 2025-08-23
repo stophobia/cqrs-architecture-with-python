@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Annotated
 
 from domain.maps.model.value_objects import Address
@@ -7,6 +5,9 @@ from domain.order.model.entities import Order
 from domain.order.model.events import OrderCancelled, OrderCreated, OrderPaid
 from domain.order.model.value_objects import BuyerId, OrderId, OrderItem
 from domain.order.ports.order_service_interface import OrderServiceInterface
+from utils.logger import get_logger
+
+logger = get_logger()
 
 
 class OrderService(OrderServiceInterface):
@@ -33,6 +34,12 @@ class OrderService(OrderServiceInterface):
         )
         await self.repository.save(order)
         await self.event_publisher.publish(OrderCreated(aggregate=order))
+        await logger.info(
+            'Order created',
+            order_id=str(order.id),
+            buyer_id=str(buyer_id),
+            payment_id=str(payment_id),
+        )
         return OrderId(order.id)
 
     async def pay_order(self, order_id: Annotated[str, OrderId]) -> None:
@@ -40,6 +47,11 @@ class OrderService(OrderServiceInterface):
         order = await self.repository.from_id(order_id=order_id)
         is_payment_verified = await self.payment_service.verify_payment(payment_id=order.payment_id)
         await self._pay_order_tnx(order_id, is_payment_verified)
+        await logger.info(
+            'Order paid',
+            order_id=str(order_id),
+            payment_verified=is_payment_verified,
+        )
 
     async def cancel_order(self, order_id: Annotated[str, OrderId]) -> None:
         """Cancel an order and publish an event."""
@@ -47,6 +59,11 @@ class OrderService(OrderServiceInterface):
         order.cancel()
         await self.repository.save(order)
         await self.event_publisher.publish(OrderCancelled(aggregate=order))
+        await logger.info(
+            'Order cancelled',
+            order_id=str(order_id),
+            status=order.status,
+        )
 
     async def _pay_order_tnx(
         self, order_id: Annotated[str, OrderId], is_payment_verified: bool
@@ -59,4 +76,6 @@ class OrderService(OrderServiceInterface):
 
     async def get_order_from_id(self, order_id: Annotated[str, OrderId]) -> Order:
         """Retrieve an order by its identifier."""
-        return await self.repository.from_id(order_id)
+        order = await self.repository.from_id(order_id)
+        await logger.info('Order retrieved', order_id=order_id)
+        return order

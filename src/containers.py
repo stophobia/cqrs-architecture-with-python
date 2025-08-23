@@ -18,9 +18,12 @@ from domain.order.repositories.order_repository import (
 from domain.order.services.order_service import OrderService
 from domain.payment.adapters.paypal_adapter import PayPalPaymentAdapter
 from domain.product.adapters.product_adapter import ProductAdapter
+from utils.logger import configure_logger
+
+configure_logger()
 
 
-class OrderContainer(containers.DeclarativeContainer):
+class AppContainer(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(modules=[__name__])
     config = providers.Configuration()
 
@@ -53,7 +56,6 @@ class OrderContainer(containers.DeclarativeContainer):
         collection_name=settings.ORDER_REPOSITORY_COLLECTION_NAME,
     )
 
-    # Services
     delivery_cost_calculator = providers.Singleton(
         DeliveryCostCalculatorAdapter, maps_service=maps_adapter
     )
@@ -67,5 +69,4 @@ class OrderContainer(containers.DeclarativeContainer):
         event_publisher=event_publisher,
     )
 
-    # Controller
     order_controller = providers.Factory(OrderController, order_service=order_service)

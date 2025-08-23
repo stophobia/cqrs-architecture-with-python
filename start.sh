@@ -3,7 +3,7 @@
 export ENVIRONMENT=${ENVIRONMENT:-development}
 export PORT=${PORT:-8000}
 export WORKERS=${WORKERS:-1}
-export LOG_LEVEL=${LOG_LEVEL:-info}
+export LOG_LEVEL=${LOG_LEVEL:-warning}
 export TIMEOUT=${TIMEOUT:-120}
 
 echo "Running the server ($ENVIRONMENT)"

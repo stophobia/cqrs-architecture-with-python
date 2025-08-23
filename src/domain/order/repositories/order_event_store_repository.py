@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pydantic import ValidationError
 from pymongo.errors import DuplicateKeyError
 
@@ -10,6 +8,9 @@ from domain.order.model.value_objects import OrderId
 from domain.order.ports.order_event_store_repository_interface import (
     OrderEventStoreRepositoryInterface,
 )
+from utils.logger import get_logger
+
+logger = get_logger()
 
 
 class OrderEventStoreRepository(OrderEventStoreRepositoryInterface):
@@ -46,6 +47,11 @@ class OrderEventStoreRepository(OrderEventStoreRepositoryInterface):
         try:
             await connection[self.collection_name].insert_one(event.to_dict())
         except DuplicateKeyError as exc:
+            await logger.exception(
+                'Duplicate event detected',
+                event_id=str(event.id),
+                collection=self.collection_name,
+            )
             raise PersistenceError(detail=f"duplicate event id {event.id}") from exc
 
     async def get_all_events_by_tracker_id(self, tracker_id: str) -> list[DomainEvent]:
@@ -75,6 +81,12 @@ class OrderEventStoreRepository(OrderEventStoreRepositoryInterface):
     ) -> Order:
         """Rehydrate an aggregate from a domain event."""
         try:
-            return aggregate_class.parse_obj(event.aggregate.dict())
+            return aggregate_class.parse_obj(event.aggregate.model_dump())
         except ValidationError as exc:
+            await logger.error(
+                'Invalid aggregate reconstruction',
+                aggregate_type=aggregate_class.__name__,
+                event_id=str(event.id),
+                error=str(exc),
+            )
             raise PersistenceError(detail='invalid aggregate reconstruction') from exc

@@ -1,8 +1,5 @@
-from __future__ import annotations
-
 import asyncio
 import json
-import logging
 from collections.abc import Callable, Coroutine
 from functools import wraps
 from typing import Any, ParamSpec, TypeVar
@@ -11,8 +8,9 @@ from redis import asyncio as aioredis
 
 from ports.cache_interface import CacheInterface
 from settings import REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_SSL
+from utils.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 P = ParamSpec('P')
 R = TypeVar('R')
@@ -29,10 +27,8 @@ def silent_mode_wrapper(
         if getattr(self, 'silent_mode', False):
             try:
                 return await func(*args, **kwargs)
-            except Exception as exc:
-                logger.error(
-                    f"Cache silent exception: {exc} - calling function: {func.__qualname__}"
-                )
+            except Exception:
+                await logger.exception('Cache silent exception')
                 return False
         return await func(*args, **kwargs)
 

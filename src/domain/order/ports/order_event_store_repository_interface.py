@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import abc
 
 from adapters.mongo_db_connector_adapter import AsyncMongoDBConnectorAdapter

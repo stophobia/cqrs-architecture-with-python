@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any, TypeVar
 
 from pydantic import BaseModel, ConfigDict, GetCoreSchemaHandler
@@ -23,7 +21,7 @@ class StrIdValueObject(str):
     """Base class for string-based identifier value objects."""
 
     @classmethod
-    def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> StrIdValueObject:
+    def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> 'StrIdValueObject':
         if not isinstance(__input_value, str):
             raise TypeError(f"expected str, got {type(__input_value).__name__}")
         if not __input_value.strip():
