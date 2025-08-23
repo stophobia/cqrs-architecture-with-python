@@ -127,7 +127,7 @@ async def test__pay_order_tnx_raises_if_order_already_cancelled(order_service):
         delivery_cost=10,
         payment_id='pay123',
     )
-    order.cancel()  # força status = CANCELLED
+    order.cancel()
     order_service.repository.from_id.return_value = order
 
     with pytest.raises(OrderAlreadyCancelledException):
@@ -143,7 +143,7 @@ async def test__pay_order_tnx_raises_if_order_already_paid(order_service):
         delivery_cost=10,
         payment_id='pay123',
     )
-    order.status = order.status.PAID  # força status = PAID
+    order.status = order.status.PAID
     order_service.repository.from_id.return_value = order
 
     with pytest.raises(OrderAlreadyPaidException):
