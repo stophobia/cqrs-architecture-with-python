@@ -78,7 +78,7 @@ With CQRS, we have a clear separation of concerns, making the codebase easier to
 
 ## Logging
 
-This project uses [structlog](https://www.structlog.org/en/stable/) for structured JSON logging.  
+This project uses [structlog](https://www.structlog.org/en/stable/) for structured JSON logging.
 Logs include contextual information (timestamp, level, module, line number) and are ready for integration with APM/observability tools.
 
 ---
