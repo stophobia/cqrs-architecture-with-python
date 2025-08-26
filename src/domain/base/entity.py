@@ -16,7 +16,7 @@ class Entity(BaseModel):
         self.version += 1
 
     def __str__(self) -> str:
-        return f"{type(self).__name__}"
+        return f"{type(self).__name__}({self.id})"
 
     def __repr__(self) -> str:
         return self.__str__()

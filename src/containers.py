@@ -1,7 +1,6 @@
 from dependency_injector import containers, providers
 
 import settings
-from adapters.event_publisher_adapter import DummyEventPublisher
 from adapters.mongo_db_connector_adapter import AsyncMongoDBConnectorAdapter
 from adapters.redis_adapter import RedisAdapter
 from domain.delivery.adapters.cost_calculator_adapter import (
@@ -28,7 +27,6 @@ class AppContainer(containers.DeclarativeContainer):
     config = providers.Configuration()
 
     cache_adapter = providers.Singleton(RedisAdapter, silent_mode=settings.CACHE_SILENT_MODE)
-    event_publisher = providers.Singleton(DummyEventPublisher)
     maps_adapter = providers.Singleton(GoogleMapsAdapter)
 
     order_event_store_connection = providers.Singleton(
@@ -66,7 +64,7 @@ class AppContainer(containers.DeclarativeContainer):
         payment_service=providers.Singleton(PayPalPaymentAdapter),
         product_service=providers.Singleton(ProductAdapter),
         delivery_service=delivery_cost_calculator,
-        event_publisher=event_publisher,
+        event_store=order_event_store_repository,
     )
 
     order_controller = providers.Factory(OrderController, order_service=order_service)

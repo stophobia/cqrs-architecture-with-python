@@ -9,18 +9,16 @@ services:
       - .env_example
     environment:
       ENVIRONMENT: development
-      REDIS_HOST: ordering-redis
+      REDIS_HOST: redis
       REDIS_PORT: "6379"
-      ORDER_REPOSITORY_CONNECTION: mongodb://root:admin@order-aggregate-repository-mongo:27017/
-      ORDER_EVENT_STORE_CONNECTION: mongodb://root:admin@ordering-event-store-mongo:27017/
+      ORDER_REPOSITORY_CONNECTION: mongodb://root:admin@mongodb:27017/
+      ORDER_EVENT_STORE_CONNECTION: mongodb://root:admin@mongodb:27017/
     ports:
       - "8000:8000"
     depends_on:
-      order-aggregate-repository-mongo:
+      mongodb:
         condition: service_healthy
-      ordering-event-store-mongo:
-        condition: service_healthy
-      ordering-redis:
+      redis:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
@@ -31,14 +29,13 @@ services:
     networks:
       - backend
     user: "1000:1000"
-
-  order-aggregate-repository-mongo:
+  mongodb:
     image: mongo:6.0
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: admin
     volumes:
-      - mongo_aggregate_data:/data/db
+      - mongodb_data:/data/db
     expose:
       - "27017"
     healthcheck:
@@ -49,26 +46,7 @@ services:
     restart: unless-stopped
     networks:
       - backend
-
-  ordering-event-store-mongo:
-    image: mongo:6.0
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: admin
-    volumes:
-      - mongo_event_store_data:/data/db
-    expose:
-      - "27017"
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "localhost/test", "--eval", "db.runCommand({ ping: 1 })"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-    networks:
-      - backend
-
-  ordering-redis:
+  redis:
     image: redis:7-alpine
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     expose:
@@ -81,7 +59,6 @@ services:
     restart: unless-stopped
     networks:
       - backend
-
   admin-mongo:
     image: mongo-express:1.0.2
     environment:
@@ -91,13 +68,11 @@ services:
       ME_CONFIG_BASICAUTH_PASSWORD: admin
       ME_CONFIG_SITE_BASEURL: /
       ME_CONFIG_MONGODB_URL: >
-        mongodb://root:admin@order-aggregate-repository-mongo:27017,mongodb://root:admin@ordering-event-store-mongo:27017
+        mongodb://root:admin@mongodb:27017
     ports:
       - "1234:8081"
     depends_on:
-      order-aggregate-repository-mongo:
-        condition: service_healthy
-      ordering-event-store-mongo:
+      mongodb:
         condition: service_healthy
     restart: unless-stopped
     networks:
@@ -107,5 +82,4 @@ networks:
   backend:
 
 volumes:
-  mongo_aggregate_data:
-  mongo_event_store_data:
+  mongodb_data:

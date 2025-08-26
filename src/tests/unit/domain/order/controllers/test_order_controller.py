@@ -5,7 +5,6 @@ import pytest
 from fastapi import Request
 from pydantic import ValidationError
 
-from adapters.event_publisher_adapter import DummyEventPublisher
 from domain.delivery.adapters.cost_calculator_adapter import DeliveryCostCalculatorAdapter
 from domain.order.controllers.order_controller import OrderController
 from domain.order.dtos.order_dtos import (
@@ -28,6 +27,9 @@ from domain.order.exceptions.order_exceptions import (
 )
 from domain.order.model.entities import Order
 from domain.order.model.value_objects import BuyerId, OrderId, OrderItem
+from domain.order.repositories.order_event_store_repository import (
+    OrderEventStoreRepository,
+)
 from domain.order.repositories.order_repository import OrderRepository
 from domain.order.services.order_service import OrderService
 from domain.payment.adapters.paypal_adapter import PayPalPaymentAdapter
@@ -41,7 +43,7 @@ def order_controller() -> OrderController:
         payment_service=MagicMock(spec=PayPalPaymentAdapter),
         product_service=MagicMock(spec=ProductAdapter),
         delivery_service=MagicMock(spec=DeliveryCostCalculatorAdapter),
-        event_publisher=MagicMock(spec=DummyEventPublisher()),
+        event_store=MagicMock(spec=OrderEventStoreRepository),
     )
     return OrderController(order_service=order_service)
 

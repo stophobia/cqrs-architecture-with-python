@@ -1,4 +1,3 @@
-from adapters.event_publisher_adapter import DummyEventPublisher
 from adapters.mongo_db_connector_adapter import AsyncMongoDBConnectorAdapter
 from adapters.redis_adapter import RedisAdapter
 from domain.delivery.adapters.cost_calculator_adapter import DeliveryCostCalculatorAdapter
@@ -22,12 +21,6 @@ def test_cache_adapter_provider():
     container = AppContainer()
     cache = container.cache_adapter()
     assert isinstance(cache, RedisAdapter)
-
-
-def test_event_publisher_provider():
-    container = AppContainer()
-    publisher = container.event_publisher()
-    assert isinstance(publisher, DummyEventPublisher)
 
 
 def test_maps_adapter_provider():
@@ -74,7 +67,7 @@ def test_order_service_provider():
     assert isinstance(service.payment_service, PayPalPaymentAdapter)
     assert isinstance(service.product_service, ProductAdapter)
     assert isinstance(service.delivery_service, DeliveryCostCalculatorAdapter)
-    assert isinstance(service.event_publisher, DummyEventPublisher)
+    assert isinstance(service.event_store, OrderEventStoreRepository)
 
 
 def test_order_controller_provider():

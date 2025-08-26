@@ -33,7 +33,7 @@ class OrderService(OrderServiceInterface):
             payment_id=payment_id,
         )
         await self.repository.save(order)
-        await self.event_publisher.publish(OrderCreated(aggregate=order))
+        await self.event_store.save(OrderCreated(aggregate=order))
         await logger.info(
             'Order created',
             order_id=str(order.id),
@@ -58,7 +58,7 @@ class OrderService(OrderServiceInterface):
         order = await self.repository.from_id(order_id)
         order.cancel()
         await self.repository.save(order)
-        await self.event_publisher.publish(OrderCancelled(aggregate=order))
+        await self.event_store.save(OrderCancelled(aggregate=order))
         await logger.info(
             'Order cancelled',
             order_id=str(order_id),
@@ -72,7 +72,7 @@ class OrderService(OrderServiceInterface):
         order = await self.repository.from_id(order_id=order_id)
         order.pay(is_payment_verified=is_payment_verified)
         await self.repository.save(order)
-        await self.event_publisher.publish(OrderPaid(aggregate=order))
+        await self.event_store.save(OrderPaid(aggregate=order))
 
     async def get_order_from_id(self, order_id: Annotated[str, OrderId]) -> Order:
         """Retrieve an order by its identifier."""

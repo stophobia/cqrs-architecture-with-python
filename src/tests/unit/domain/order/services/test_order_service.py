@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from adapters.event_publisher_adapter import DummyEventPublisher
 from domain.delivery.adapters.cost_calculator_adapter import (
     DeliveryCostCalculatorAdapter,
 )
@@ -16,6 +15,9 @@ from domain.order.exceptions.order_exceptions import (
 from domain.order.model.entities import Order
 from domain.order.model.events import OrderCancelled, OrderPaid
 from domain.order.model.value_objects import BuyerId, OrderId, OrderItem
+from domain.order.repositories.order_event_store_repository import (
+    OrderEventStoreRepository,
+)
 from domain.order.repositories.order_repository import (
     OrderRepository,
 )
@@ -31,7 +33,7 @@ def order_service():
         payment_service=MagicMock(spec=PayPalPaymentAdapter),
         product_service=MagicMock(spec=ProductAdapter),
         delivery_service=MagicMock(spec=DeliveryCostCalculatorAdapter),
-        event_publisher=MagicMock(spec=DummyEventPublisher()),
+        event_store=MagicMock(spec=OrderEventStoreRepository),
     )
 
 
@@ -60,7 +62,7 @@ async def test_create_new_order(order_service):
     order_service.payment_service.new_payment.assert_called_once_with(100)
     order_service.delivery_service.calculate_cost.assert_called_once()
     order_service.repository.save.assert_awaited()
-    order_service.event_publisher.publish.assert_awaited()
+    order_service.event_store.save.assert_awaited()
     assert isinstance(order_id, OrderId)
 
 
@@ -76,9 +78,9 @@ async def test_pay_order(order_service):
     order_service.repository.from_id.assert_awaited_with(order_id='o1')
     order_service.payment_service.verify_payment.assert_awaited_with(payment_id='pay123')
     order_service.repository.save.assert_awaited()
-    order_service.event_publisher.publish.assert_awaited()
-    published_event = order_service.event_publisher.publish.call_args.args[0]
-    assert isinstance(published_event, OrderPaid)
+    order_service.event_store.save.assert_awaited()
+    stored_event = order_service.event_store.save.call_args.args[0]
+    assert isinstance(stored_event, OrderPaid)
 
 
 @pytest.mark.asyncio
@@ -91,8 +93,8 @@ async def test_cancel_order(order_service):
 
     fake_order.cancel.assert_called_once()
     order_service.repository.save.assert_awaited_with(fake_order)
-    published_event = order_service.event_publisher.publish.call_args.args[0]
-    assert isinstance(published_event, OrderCancelled)
+    stored_event = order_service.event_store.save.call_args.args[0]
+    assert isinstance(stored_event, OrderCancelled)
 
 
 @pytest.mark.asyncio
@@ -104,8 +106,8 @@ async def test__pay_order_tnx(order_service):
 
     fake_order.pay.assert_called_once_with(is_payment_verified=True)
     order_service.repository.save.assert_awaited_with(fake_order)
-    published_event = order_service.event_publisher.publish.call_args.args[0]
-    assert isinstance(published_event, OrderPaid)
+    stored_event = order_service.event_store.save.call_args.args[0]
+    assert isinstance(stored_event, OrderPaid)
 
 
 @pytest.mark.asyncio
